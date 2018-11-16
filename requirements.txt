@@ -30,7 +30,6 @@ conda==4.3.30
 conda-build==3.0.27
 conda-verify==2.0.0
 contextlib2==0.5.5
-cryptography==2.0.3
 cycler==0.10.0
 Cython==0.26.1
 cytoolz==0.8.2
@@ -44,7 +43,6 @@ entrypoints==0.2.3
 et-xmlfile==1.0.1
 fastcache==1.0.2
 filelock==2.0.12
-Flask==0.12.2
 Flask-Cors==3.0.3
 gast==0.2.0
 gevent==1.2.2
@@ -93,7 +91,6 @@ nbformat==4.4.0
 networkx==2.0
 nltk==3.3
 nose==1.3.7
-notebook==5.0.0
 numba==0.35.0+6.gaa35fb1
 numexpr==2.6.2
 numpy==1.13.3
@@ -123,13 +120,11 @@ py==1.4.34
 pycodestyle==2.3.1
 pycosat==0.6.2
 pycparser==2.18
-pycrypto==2.6.1
 pycurl==7.43.0
 pyflakes==1.6.0
 Pygments==2.2.0
 pylint==1.7.4
 pyodbc==4.0.17
-pyOpenSSL==17.2.0
 pyparsing==2.2.0
 PySocks==1.6.7
 pytest==3.2.1
@@ -141,8 +136,6 @@ pyzmq==16.0.2
 QtAwesome==0.4.4
 qtconsole==4.3.1
 QtPy==1.3.1
-requests==2.18.4
-rope==0.10.5
 ruamel-yaml==0.11.14
 scikit-image==0.13.0
 scikit-learn==0.19.1

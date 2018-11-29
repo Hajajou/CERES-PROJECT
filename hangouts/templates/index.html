@@ -1,6 +1,37 @@
-{% extends 'base.html'%}
+{% extends 'base.html' %}
 
 {% block content %}
-	<h4>Let us start project now !</h4>
+	<div id="div1">
+		<p>Good morning</p>
+	</div>
+	<div id="div2"></div>
+
+
+
+<script>
+{% block jquery %}
+
+	$(document).ready(function () { 
+	  	var width = 300;
+		var height = 300;
+		var svg = d3.select("#div2")
+		    .append("svg")
+		    .attr("width", width)
+		    .attr("height", height);
+		 svg.append("line")
+		    .attr("x1", 100)
+		    .attr("y1", 100)
+		    .attr("x2", 200)
+		    .attr("y2", 200)
+		    .style("stroke", "rgb(255,0,0)")
+		    .style("stroke-width", 2);
+		});
+		d3.selectAll("p").style("color", function() {
+		  return "hsl(" + Math.random() * 360 + ",100%,50%)";
+		});
+{% endblock %}
+</script>
 
 {% endblock content%}
+
+

@@ -37,8 +37,8 @@ def index(request):
 	gbt= conv.groupby('ID')  # ID c'est ID des conv
 	n = len(gbt)
 	gbt_dict = gbt['timestamp'].apply(list).to_dict()
-	# for f,g in gbt_dict.items():
-	# 	print()
 
-	# print('fuck')
+
+	tAt  = allmessages.groupby('ID').agg([hgf.duree_conv, min, max]).drop([('len_text', 'duree_conv')], axis=1)
+	
 	return render(request,'index.html',{'gbt':json.dumps(gbt_dict),'nombre':n})

@@ -5,29 +5,10 @@ from .dataset import hangout_functions as hgf
 import pandas as pd
 import numpy as np
 import json
+from django.db import connection
 
 # Create your views here.
 def index(request):
-	# len(hgf.get_discussions())
-	# hg_events = hgf.load_conv_events()
-	# hgf.get_types_actions(hg_events, nb=False)
-	# [hgf.count_actions_in(evts) for evts in hg_events]
-	# hgf.count_actions()
-
-	# hgf.count_actions(msg_type='REGULAR_CHAT_MESSAGE')
-
-	# [hgf.count_actions_in(evts, msg_type='REGULAR_CHAT_MESSAGE') for evts in hgf.load_conv_events()]
-
-	# C = hgf.load_conversations()  
-
-	# participants = hgf.get_participants(C, debug=True)
-	# participants.columns
-	# participants.groupby('convID').agg(len).pID.values
-
-	# participants.pName.unique()[:4]
-
-	# print(hgf.get_msgs(hg_events).columns)
-
 	E = hgf.load_conv_events()
 	allmessages = hgf.get_msgs(E, len_text=True, msg_type='REGULAR_CHAT_MESSAGE')
 	# print(allmessages)
@@ -38,7 +19,33 @@ def index(request):
 	n = len(gbt)
 	gbt_dict = gbt['timestamp'].apply(list).to_dict()
 
+	lAt  = allmessages.groupby('ID')['len_text'].sum()
+	# print(lAt.to_dict())
 
-	tAt  = allmessages.groupby('ID').agg([hgf.duree_conv, min, max]).drop([('len_text', 'duree_conv')], axis=1)
+	# tAt  = allmessages.groupby('ID').agg([hgf.duree_conv, min, max]).drop([('len_text', 'duree_conv')], axis=1)
 	
-	return render(request,'index.html',{'gbt':json.dumps(gbt_dict),'nombre':n})
+	return render(request,'index.html',{'gbt':json.dumps(gbt_dict),'nombre':n,'js_len_message':json.dumps(lAt.to_dict())})
+
+def traceforum(request):
+	user = 'tdelille'
+	# with connection.cursor() as cursor:
+		# cursor.execute("SELECT * FROM transition")
+		# row = cursor.fetchall()
+	query = 'select * from transition'
+	df_traceforum = pd.read_sql(query, connection)
+	# to do nb d'utilisateur qui cite le message
+
+	# A = df_traceforum.groupby('Utilisateur')
+	#Nombre de message cité par un utilisateur donné
+	df2 = df_traceforum.copy()
+	B = df2[df2['Titre'].str.contains("Citer un message")].groupby('Utilisateur').size().reset_index(name='nb_message_cite')
+	print(dict(zip(B['Utilisateur'],B['nb_message_cite'])))
+	nb_message_cite = df2[ df2['Titre'].str.contains("Citer un message") & df2['Utilisateur'].str.contains(user)].shape[0]
+	
+
+
+	
+	return render(request,'traceforum.html',{'historique':json.dumps(dict(zip(B['Utilisateur'],B['nb_message_cite'])))})
+
+
+

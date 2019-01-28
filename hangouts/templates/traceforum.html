@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load extra_filters %}
+
+{% block content %}
+<svg width="960" height="500"></svg>
+<div id="toolTipMessageCite"></div>
+<script>
+{% block jquery %}
+var svg = d3.select("svg"),
+    margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = +svg.attr("width") - margin.left - margin.right,
+    height = +svg.attr("height") - margin.top - margin.bottom;
+  
+var tooltip = d3.select("#toolTipMessageCite").append("div").attr("class", "toolTip");
+
+var x = d3.scaleBand().rangeRound([0, width]).padding(0.1),
+    y = d3.scaleLinear().rangeRound([height, 0]);
+  
+var colours = d3.scaleOrdinal()
+    .range(["#6F257F", "#CA0D59"]);
+
+var g = svg.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+var js_data = {{historique|safe}};
+
+graph.traceHistogramme1(graph.pd2datajs(js_data),'nb message cité',g,x,y,height,tooltip);
+{% endblock %}
+</script>
+{% endblock content%}

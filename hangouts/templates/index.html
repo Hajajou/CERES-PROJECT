@@ -3,8 +3,8 @@
 
 
 {% block content %}
-	<div id="boxTimestamp">
-	</div>
+	<div id="boxTimestamp"></div>
+	<div id="histogrammeLenMsg"></div>
 <script>
 {% block jquery %}
 
@@ -195,12 +195,28 @@
 			axisTopG.append("g")
 			  .call(axisTop);
 
+			var svgHistogramme = d3.select("#histogrammeLenMsg").append("svg")
+			    .attr("width", width + margin.left + margin.right)
+			    .attr("height", height + margin.top + margin.bottom)
+			    .append("g")
+			    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+			var js_len_msg = {{js_len_message|safe}}
+			console.log(js_len_msg)
+			// set the ranges
+			// var x_hist = d3.scale.ordinal().rangeRoundBands([0, width], .05);
+			// var x_hist = d3.scaleBand().rangeRound([0, width]).padding(0.05);      
+			// var y_hist = d3.scale.linear().range([height, 0]);
+			// var y_hist = d3.scaleLinear().range([height,0]);
+			var tooltip_hist = d3.select("#histogrammeLenMsg").append("div").attr("class", "toolTip");
+  
+			var x_hist = d3.scaleLinear().range([0, width]);
+			var y_hist = d3.scaleBand().range([height, 0]);
 
-			  /* Yannick to do */
-
-
-
+			var g_hist = svgHistogramme.append("g")
+					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+			graph.traceHistogramme2(graph.pd2datajs(js_len_msg),'ds',g_hist,x_hist,y_hist,height,tooltip_hist)
+			  
 		});
 		
 		function boxQuartiles(d) {
@@ -210,6 +226,7 @@
 		     d3.quantile(d, .75)
 		   ];
 		}
+
 
 
 {% endblock %}

@@ -1,5 +1,6 @@
 #Connexion au serveur
 import mysql.connector
+from datetime import timedelta
 
 conn = mysql.connector.connect(host="localhost",user="root",password="GDX47OYY", database="ceres")
 print(conn)
@@ -75,7 +76,55 @@ ligne = cursor.fetchall()
 print('Le 2009-02-13:')
 for ligne in ligne:
     print('{0} connecté {1} fois à {2}'.format(ligne[0],ligne[1], ligne[2]))
+
+
+#Heure de connexion from vue_sebastien
+text = ("Connexion",)
+cursor.execute("select Utilisateur from vue_sebastien where Titre = %s  ",(text))
+ligne = cursor.fetchone()
+print(ligne)
 conn.close()
+
+
+"""
+#Heure de connexion from vue_sebastien
+heure = ("13:31:59",)
+cursor.execute("select Titre from vue_sebastien where Heure = %s ",(heure))
+ligne = cursor.fetchone()
+print(ligne)
+"""
+
+
+#cursor.execute("SELECT nom FROM proprietaire where nom like ?", ('%' + text + '%',))
+
+#cursor.execute('SELECT * FROM "maTable" WHERE "Nom" LIKE \'%' + mavariable + '%\'');
+
+
+
+
+#curseur.execute("""SELECT ANNIV_Nom FROM ANNIV WHERE ANNIV_Mois = ? AND ANNIV_JOUR = ?""", (Today_Mois,Today_Jour))
+
+
+
+"""
+def convert_timedelta(ligne):
+    days, seconds = ligne.days, ligne.seconds
+    hours = days * 24 + seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = (seconds % 60)
+    return hours, minutes, seconds
+td = datetime.timedelta(2, 7743, 12345)
+hours, minutes, seconds = convert_timedelta(td)
+print('{} minutes, {} hours'.format(minutes, hours))
+def convert_timedelta(ligne):
+    days, seconds = ligne.days, ligne.seconds
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = (seconds % 60)
+    return days, hours, minutes, seconds
+    print (' {} minutes, {} hours, {} days'.format(minutes, hours, days))
+"""
+
 
 
 """

@@ -1,29 +1,516 @@
 {% extends 'base.html' %}
 {% load extra_filters %}
+{% load crispy_forms_tags %}
 
 {% block content %}
-<svg width="960" height="500"></svg>
-<div id="toolTipMessageCite"></div>
+<style type="text/css">
+.tooltip {
+  position: absolute;
+  text-align: center;
+  width: 180px;
+  height: 28px;
+  padding: 2px;
+  font: 12px sans-serif;
+  background: lightsteelblue;
+  border: 0px;
+  border-radius: 8px;
+  pointer-events: none;
+}
+</style>
+
+<div class="container">
+	<div class="col-md-9">
+		<form method="POST">{% csrf_token %}
+	    {{form}}
+	    <div class="form-group">
+	    	<button type="submit" class="btn btn-light">Update</button>
+    	</div>
+	    <!-- <input type="submit" value="Submit"> -->
+		</form>
+	</div>
+</div>
+
+<div id="historiqueMessageCite"></div>
+<div id="brushScatter"></div>
+<div id="histogramme"></div>
+<div id="radarChart"></div>
 <script>
+
 {% block jquery %}
-var svg = d3.select("svg"),
-    margin = {top: 20, right: 20, bottom: 30, left: 50},
-    width = +svg.attr("width") - margin.left - margin.right,
-    height = +svg.attr("height") - margin.top - margin.bottom;
+$('.selectpicker').selectpicker({
+    style: 'btn-light',
+});
+
+
+
+var svg_histogramme = d3.select("#histogramme")
+	.append("svg")
+	.attr('width',960)
+	.attr('height',500)
+	.attr('class','svg_histogramme'),
+
+    margin = {top: 20, right: 20, bottom: 100, left: 50},
+    width = +svg_histogramme.attr("width") - margin.left - margin.right,
+    height = +svg_histogramme.attr("height") - margin.top - margin.bottom;
+
+const innerWidth = width - margin.left - margin.right;
+const innerHeight = height - margin.top - margin.bottom;
+
+var tooltip_histogramme = d3.select("#histogramme").append("div").attr("class", "toolTip");
+
+var x_histogramme = d3.scaleBand().range([0, width]).padding(0.1),
+    y_histogramme = d3.scaleLinear().range([height, 0]);
   
-var tooltip = d3.select("#toolTipMessageCite").append("div").attr("class", "toolTip");
 
-var x = d3.scaleBand().rangeRound([0, width]).padding(0.1),
-    y = d3.scaleLinear().rangeRound([height, 0]);
-  
-var colours = d3.scaleOrdinal()
-    .range(["#6F257F", "#CA0D59"]);
+var g_histogramme = svg_histogramme.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+    .attr("class","g_histogramme");
 
-var g = svg.append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-var js_data = {{historique|safe}};
 
-graph.traceHistogramme1(graph.pd2datajs(js_data),'nb message cité',g,x,y,height,tooltip);
+g_histogramme.append("g")
+        .attr("class", "axis axis--xh")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x_histogramme));
+
+g_histogramme.append("g")
+  	.attr("class", "axis axis--yh")
+  	.call(d3.axisLeft(y_histogramme))
+  	.append("text")
+  	.attr("class","ylabel")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 6)
+    .attr("dy", "0.71em")
+    .attr("text-anchor", "end")
+    .attr("fill", "#5D6971")
+    .text("no activity");
+
+// var js_data = {{historique|safe}};
+// var svg_historiqueMessageCite = d3.select("#svg_historiqueMessageCite").append("svg")
+// 		  .attr("width", 960)
+// 		  .attr("height", 500)
+// 		  .append("g")
+// 		  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// scatter chart for historique message cite 
+
+var parseTime = d3.timeParse("%Y-%m-%d %I:%M");
+var datetime_values = [];
+var users_values = [];
+var activities_values = [];
+
+function transformDateData(){
+	var dataHistoriqueMessageCite = [];
+	{% for item in dataMessageCite %}
+		var cell = [];
+		cell.push("{{item.0}}");
+		users_values.push(parseInt("{{item.0}}",10));
+
+		cell.push(parseTime("{{item.1|date:'Y-m-d H:i'}}"));
+		datetime_values.push(parseTime("{{item.1|date:'Y-m-d H:i'}}"));
+
+		cell.push(parseInt("{{item.2}}"));
+		activities_values.push(parseInt("{{item.2}}"));
+
+		dataHistoriqueMessageCite.push(cell)
+	{% endfor %}
+	return dataHistoriqueMessageCite
+}
+
+var users_dict = {{usersDict|safe}};
+var dataHistoriqueMessageCite = transformDateData();
+
+// var btns = d3.select("#btnDiv").selectAll("button").data(d3.entries(users_dict));
+// btns = btns.enter().append("button").style("display","inline-block").attr('class','btn btn-light');
+// // fill the buttons with the year from the data assigned to them
+// btns.each(function (d) {
+// 	this.innerText = d.key;
+// 	this.id = d.value;
+// });
+
+// btns = btns.enter().append("button").style("display","inline-block").attr('class','btn btn-light');
+// scatterPlotZoom(dataHistoriqueMessageCite,'historiqueMessageCite',width,height,margin);
+
+var activities_dict = {{activitiesDict|safe}};
+
+function getKeyByValue(object, value) {
+	  return Object.keys(object).find(key => object[key] === value);
+};
+
+// var svg_legend_explique = d3.select("#legend_explqiue")
+// 	.append("svg")
+// 	.attr('width',500)
+// 	.attr('height',250)
+// 	.attr('class','svg_legend_explique');
+
+// var text_legend_explique = svg_legend_explique.selectAll("text")
+// 	.data(d3.entries(activities_dict))
+// 	.enter()
+// 	.append("text")
+// 	.attr("x",30)
+// 	.attr("y",d=>(d.value*20+20))
+// 	.text(d=>(d.key+" : "+d.value));
+
+
+
+// graph.traceHistogramme1(graph.pd2datajs(getHistogrammeData(d3.min(datetime_values),d3.max(datetime_values),2)) ,getKeyByValue(activities_dict,2),g_histogramme,x_histogramme,y_histogramme,height,tooltip_histogramme);
+
+function update_histogramme(data,label_y){
+	var colours = d3.scaleOrdinal()
+    	.range(["#6F257F", "#CA0D59"]);
+
+    x_histogramme.domain(data.map(function(d) { return d.key; }));
+    y_histogramme.domain([0, d3.max(data, function(d) { return d.value; })]);
+
+    g_histogramme.select('.axis--xh').call(d3.axisBottom(x_histogramme));
+    g_histogramme.select('.axis--yh').call(d3.axisLeft(y_histogramme));
+    	
+    g_histogramme.select('.ylabel').text(label_y);
+
+    var bars = g_histogramme.selectAll(".bar")
+					.remove()
+					.exit()
+					.data(data);
+
+      bars.enter().append("rect")
+        .attr("x", function(d) { return x_histogramme(d.key); })
+        .attr("y", function(d) { return y_histogramme(d.value); })
+        .attr("class","bar")
+        .attr("width", x_histogramme.bandwidth())
+        .attr("height", function(d) { return height - y_histogramme(d.value); })
+        .attr("fill", function(d) { return colours(d.key); })
+        .on("mousemove", function(d){
+            tooltip_histogramme
+              .style("left", d3.event.pageX - 50 + "px")
+              .style("top", d3.event.pageY - 70 + "px")
+              .style("display", "inline-block")
+              .html(d.key+"<br/>"+d.value);
+        })
+    		.on("mouseout", function(d){ tooltip_histogramme.style("display", "none");});
+};
+
+function brushScatter(data,elem_id,parseDate,xvalues,yvalues,zvalues){
+	var e = [];
+
+	var margin = {top: 20, right: 20, bottom: 110, left: 70},
+    margin2 = {top: 430, right: 20, bottom: 30, left: 50},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom,
+    height2 = 500 - margin2.top - margin2.bottom;
+
+
+	var x = d3.scaleTime().range([0, width]),
+	    x2 = d3.scaleTime().range([0, width]),
+	    y = d3.scalePoint().range([height, 0]),
+	    y2 = d3.scalePoint().range([height2, 0]);
+
+	var xAxis = d3.axisBottom(x).tickFormat(d3.timeFormat("%Y-%m-%d")),
+	    xAxis2 = d3.axisBottom(x2).tickFormat(d3.timeFormat("%Y-%m-%d")),
+	    yAxis = d3.axisLeft(y);
+	    yAxis2 = d3.axisLeft(y2);
+
+	var brush = d3.brushX()
+	    .extent([[0, 0], [width, height2]])
+	    .on("brush", brushed);
+
+	var color = d3.scaleOrdinal(d3.schemeCategory10).domain(zvalues);
+
+	var tooltip = d3.select("#"+elem_id).append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+
+	var svg = d3.select("#"+elem_id).append("svg")
+	    .attr("width", width + margin.left + margin.right)
+	    .attr("height", height + margin.top + margin.bottom);
+
+	svg.append("defs").append("clipPath")
+	    .attr("id", "clip")
+	  .append("rect")
+	    .attr("width", width)
+	    .attr("height", height);
+
+	var focus = svg.append("g")
+	    .attr("class", "focus")
+	    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	var context = svg.append("g")
+	    .attr("class", "context")
+	    .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
+
+
+	  // x.domain(d3.extent(data, function(d) { return d[1]; }));
+	  // y.domain([0, d3.max(data, function(d) { return d[0]; })]);
+	  x.domain(d3.extent(data,d=>d[1]));
+	  y.domain(data.map(d=>d[0]));
+	  x2.domain(x.domain());
+	  y2.domain(y.domain());
+
+	// append scatter plot to main chart area 
+	 var dots_g = focus.append("g")
+	    .attr("clip-path", "url(#clip)")
+	    .selectAll("dot")
+	        .data(data)
+	        .enter().append("circle")
+	        .attr('class', 'dot')
+	        .attr("r",5)
+	        .style("opacity", .5)
+	        .style("fill", d=>color(d[2]))
+	        .attr("cx", function(d) { return x(d[1]); })
+	        .attr("cy", function(d) { return y(d[0]); })
+	        .on("mouseover", function(d) {
+	        	// var thisopacity = d3.select(this).style("opacity");
+	        	// console.log(thisopacity)
+	        	// if (parseFloat(thisopacity) > 0) {
+	        		tooltip.transition()
+			         .duration(200)
+			         .style("opacity", .9);
+			       tooltip.html(d[1]+"<br/>"+d[0]+"<br/>"+getKeyByValue(activities_dict,d[2]))
+			         .style("left", (d3.event.pageX) + "px")
+			         .style("top", (d3.event.pageY - 28) + "px");
+	        	// }
+		       
+		       })
+		     .on("mouseout", function(d) {
+		       tooltip.transition()
+		         .duration(500)
+		         .style("opacity", 0);
+		     });
+	        
+	    
+	focus.append("g")
+	      .attr("class", "axis axis--x")
+	      .attr("transform", "translate(0," + height + ")")
+	      .call(xAxis);
+
+	focus.append("g")
+	      .attr("class", "axis axis--y")
+	      .call(yAxis);
+	      
+	focus.append("text")
+	      .attr("transform", "rotate(-90)")
+	      .attr("y", 0 - margin.left)
+	      .attr("x",0 - (height / 2))
+	      .attr("dy", "1em")
+	      .style("text-anchor", "middle")
+	      .text("User");  
+	      
+	svg.append("text")             
+	      .attr("transform",
+	            "translate(" + ((width + margin.right + margin.left)/2) + " ," + 
+	                           (height + margin.top + margin.bottom) + ")")
+	      .style("text-anchor", "middle")
+	      .text("Date");
+
+	// append scatter plot to brush chart area      
+	 var dots_context = context.append("g")
+	     .attr("clip-path", "url(#clip)")
+	     .selectAll("dot")
+	        .data(data)
+	        .enter().append("circle")
+	        .attr('class', 'dotContext')
+	        .attr("r",3)
+	        .style("opacity", .5)
+	        .attr("cx", function(d) { return x2(d[1]); })
+	        .attr("cy", function(d) { return y2(d[0]); })
+	        .style("fill", d=>color(d[2]));
+	    
+	context.append("g")
+	      .attr("class", "axis axis--x")
+	      .attr("transform", "translate(0," + height2 + ")")
+	      .call(xAxis2);
+
+	context.append("g")
+	      .attr("class", "brush")
+	      .call(brush)
+	      .call(brush.move, x.range());
+
+	var clicked = null;
+	var legend = focus.selectAll(".legend")
+      .data(color.domain())
+      .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; })
+      .on("mouseover", function(d) {
+		       tooltip.transition()
+		         .duration(200)
+		         .style("opacity", .9);
+		       tooltip.html(getKeyByValue(activities_dict,d))
+		         .style("left", (d3.event.pageX) + "px")
+		         .style("top", (d3.event.pageY - 28) + "px");
+		       })
+		     .on("mouseout", function(d) {
+		       tooltip.transition()
+		         .duration(500)
+		         .style("opacity", 0);
+		     })
+      .on("click",function(d){
+
+      	d3.selectAll(".dot").style("opacity",0.5);
+   		d3.selectAll(".dotContext").style("opacity",0.5);
+
+	   if (clicked !== d){
+	     d3.selectAll(".dot")
+	       .filter(function(e){
+	       return e[2] !== d;
+	     })
+	       .style("opacity",0);
+	     d3.selectAll(".dotContext")
+	       .filter(function(e){
+	       return e[2] !== d;
+	     })
+	       .style("opacity",0);
+	     clicked = d;
+
+	     // draw graph for each activity
+	     if (e[0] != null) {
+		  	var data_update = getHistogrammeData(e[0],e[1],clicked);
+		  	update_histogramme(graph.pd2datajs(data_update),getKeyByValue(activities_dict,parseInt(clicked)));
+
+
+	     }else{
+	     	var data_update = getHistogrammeData(d3.min(xvalues),d3.max(xvalues),clicked);
+	     	update_histogramme(graph.pd2datajs(data_update),getKeyByValue(activities_dict,parseInt(clicked)));
+	     }
+
+	   }
+	    else{
+	      clicked = null
+	    }
+      });
+
+  legend.append("rect")
+      .attr("x", width - 18)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", color);
+
+  legend.append("text")
+      .attr("x", width - 24)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .text();
+      // .text(function(d) { return getKeyByValue(activities_dict,d); });
+       
+
+
+	//create brush function redraw scatterplot with selection
+	function brushed() {
+
+	  var selection = d3.event.selection;
+	  e = selection.map(x2.invert, x2);
+	  x.domain(e);
+
+	  focus.selectAll(".dot")
+	        .attr("cx", function(d) { return x(d[1]); })
+	        .attr("cy", function(d) { return y(d[0]); });
+	  focus.select(".axis--x").call(xAxis);
+
+	}
+	// console.log(activities_dict)
+	// draw radar chart
+	function toDataRadar(startDate,endDate){
+		var data_axe = [];
+
+		for (var i in Object.values(activities_dict)){
+			
+			var data_angle = getHistogrammeData(startDate,endDate,i);
+			var cell = [];
+			console.log(data_angle)
+			for (var j = data_angle.length - 1; j >= 0; j--) {
+				// console.log('djsk',data_angle[j],j)
+				var cell_axe = {};
+				cell_axe['name']=data_angle[j][0];
+				cell_axe['axis'] = getKeyByValue(activities_dict,parseInt(i));
+				cell_axe['value'] = data_angle[j][1];
+				cell.push(cell_axe);
+			}
+			data_axe.push(cell);
+		}
+		// console.log('good',data_axe)
+		var dateArr = Object.values(data_axe.flat().reduce((result, {name,axis,value}) => {
+			    // Create new group
+			    // console.log("into group by",name)
+			    if (!result[name]){
+			    	result[name] = {
+			        name,
+			        axes: []
+			    	};
+			    }
+			    // Append to group
+			    result[name].axes.push({
+			        axis,
+			        value
+			    });
+			    return result;
+			}, {}));
+
+		return dateArr;
+	}
+
+
+	function drawRadarChart(data){
+		var radarChartOptions2 = {
+			  w: 290,
+			  h: 350,
+			  margin: margin,
+			  maxValue: 60,
+			  levels: 6,
+			  roundStrokes: false,
+			  color: d3.scaleOrdinal().range(["#AFC52F", "#ff6600"]),
+				format: '.0f',
+				legend: { title: 'Utilisateur', translateX: 100, translateY: 40 },
+				unit: '$'
+			};
+
+		// Draw the chart, get a reference the created svg element :
+		let svg_radar2 = RadarChart("#radarChart", data, radarChartOptions2);
+	}
+
+
+	if (e[0] != null) {
+	  	var data_update = toDataRadar(e[0],e[1]);
+	  	drawRadarChart(data_update) 
+     }else{
+     	var data_update = toDataRadar(d3.min(xvalues),d3.max(xvalues));
+     	drawRadarChart(data_update)
+     }
+	
+}
+
+brushScatter(dataHistoriqueMessageCite,'brushScatter', parseTime, datetime_values, users_values,activities_values);
+
+
+function getHistogrammeData(startDate, endDate,typeAct){
+	var data1 = dataHistoriqueMessageCite.filter(function(item){
+		if(item[1] >= startDate && item[1] <= endDate && typeAct == item[2]){
+			return true;
+		}
+		return false;
+	} );
+
+
+
+	var data2 = data1.map(item=>[item[0],[1]]);
+	var  shuffle = (arr) => {
+                          var sortedArray = arr.sort();
+                          sortedArray.forEach((elem, index, arr) => {
+                            while (arr[index + 1] && elem[0] === arr[index + 1][0]){
+                              arr[index][1].push(1);
+                              arr.splice(index + 1, 1);
+                            }
+                          });
+                          return sortedArray;
+	};
+	var reduce = (arr) => arr.map(elem => [elem[0],elem[1].reduce((a, b) => a + b)]);
+
+	return reduce(shuffle(data2));
+
+}
+
+
+
+
 {% endblock %}
 </script>
 {% endblock content%}
+

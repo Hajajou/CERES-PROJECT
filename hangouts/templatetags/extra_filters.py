@@ -16,3 +16,7 @@ def min_list(l):
 	return min(l)
 
 
+import time
+@register.filter
+def print_timestamp(ts):
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(ts))
